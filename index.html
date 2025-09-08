@@ -1,665 +1,335 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TechStore - Premium Electronics</title>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini To-Do List</title>
+    <!--
+      이 파일 하나(index.html)만으로 동작하는 미니 투두 리스트 예제입니다.
+      - HTML: 화면에 보이는 구조를 담당합니다.
+      - CSS: 화면의 스타일(색, 크기, 간격 등)을 담당합니다.
+      - JavaScript: 동작(클릭, 입력, 배열 관리 등)을 담당합니다.
+
+      핵심 학습 포인트
+      1) 배열(Array)로 데이터(할 일 목록)를 관리합니다.
+      2) 배열 내용을 화면의 리스트(DOM)와 동기화(render)하는 방법을 익힙니다.
+      3) 항목 클릭 시 완료/미완료를 토글하여 스타일(줄 긋기)이 바뀌게 합니다.
+    -->
     <style>
-        /* Reset and base styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      /* 전체 화면 기본 스타일 설정 */
+      :root {
+        --bg: #0f172a;          /* 배경색 (짙은 남색) */
+        --panel: #111827;       /* 카드/패널 배경 */
+        --text: #e5e7eb;        /* 기본 글자색 */
+        --muted: #9ca3af;       /* 보조 글자색 */
+        --accent: #22c55e;      /* 포인트 색 (초록) */
+        --danger: #ef4444;      /* 에러/경고 색 (빨강) */
+        --border: #1f2937;      /* 경계선 색 */
+      }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8f9fa;
-        }
+      * {
+        box-sizing: border-box;
+      }
 
-        /* Header styles */
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem 0;
-            text-align: center;
-        }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+          "Apple Color Emoji", "Segoe UI Emoji";
+        height: 100%;
+      }
 
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
+      .container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 32px 16px 56px;
+      }
 
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
+      header {
+        margin-bottom: 20px;
+      }
 
-        /* Container for responsive layout */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 8px 0;
+      }
 
-        /* Products section */
-        .products-section {
-            padding: 3rem 0;
-        }
+      p.subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
 
-        .section-title {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 2rem;
-            color: #2c3e50;
-        }
+      .card {
+        background: linear-gradient(180deg, #0b1220, #0b1220) padding-box,
+          linear-gradient(180deg, #1f2937, #0b1220) border-box;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+      }
 
-        /* Product grid - responsive layout */
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
 
-        /* Individual product card */
-        .product-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
-        }
+      input[type="text"] {
+        flex: 1 1 auto;
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
 
-        /* Hover effect for product cards */
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
+      input[type="text"]::placeholder {
+        color: var(--muted);
+      }
 
-        /* Product image */
-        .product-image {
-            width: 100%;
-            height: 200px;
-            background: #f1f3f4;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: #6c757d;
-        }
+      input[type="text"]:focus {
+        border-color: #2563eb; /* 파란 포커스 */
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+      }
 
-        /* Product title */
-        .product-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
-        }
+      button.add-btn {
+        flex: 0 0 auto;
+        background: var(--accent);
+        color: #0a0f1f;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.05s ease, filter 0.15s ease;
+      }
 
-        /* Product price */
-        .product-price {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #e74c3c;
-            margin-bottom: 0.5rem;
-        }
+      button.add-btn:hover {
+        filter: brightness(1.05);
+      }
 
-        /* Star rating */
-        .rating {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
+      button.add-btn:active {
+        transform: translateY(1px);
+      }
 
-        .stars {
-            color: #ffc107;
-            margin-right: 0.5rem;
-        }
+      .helper {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+      }
 
-        .rating-text {
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
+      ul.todo-list {
+        list-style: none;
+        margin: 16px 0 0 0;
+        padding: 0;
+      }
 
-        /* Product options section */
-        .product-options {
-            margin-bottom: 1.5rem;
-        }
+      li.todo-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        user-select: none; /* 텍스트 드래그 방지로 클릭 실수 줄이기 */
+        cursor: pointer;    /* 클릭 가능한 항목임을 시각적으로 표기 */
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
 
-        .option-group {
-            margin-bottom: 1rem;
-        }
+      li.todo-item:hover {
+        background: #0f1a2e;
+        border-color: #2a3a55;
+      }
 
-        .option-label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: #495057;
-        }
+      li.todo-item .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #475569; /* 기본 점 색 */
+        flex: 0 0 auto;
+        transition: background 0.15s ease;
+      }
 
-        /* Dropdown styles */
-        .dropdown {
-            width: 100%;
-            padding: 0.5rem;
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            background: white;
-            cursor: pointer;
-            transition: border-color 0.3s ease;
-        }
+      li.todo-item.completed .dot {
+        background: var(--accent);
+      }
 
-        .dropdown:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+      li.todo-item .text {
+        flex: 1;
+        line-height: 1.4;
+        word-break: break-word;
+      }
 
-        /* Button group for memory/storage options */
-        .button-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
+      /* 완료된 항목은 줄 긋기와 흐린 색상 적용 */
+      li.todo-item.completed .text {
+        text-decoration: line-through;
+        color: #94a3b8;
+      }
 
-        .option-btn {
-            padding: 0.5rem 1rem;
-            border: 2px solid #dee2e6;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-
-        .option-btn:hover,
-        .option-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        /* Color selector */
-        .color-options {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .color-option {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 3px solid #dee2e6;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .color-option:hover,
-        .color-option.active {
-            border-color: #333;
-            transform: scale(1.1);
-        }
-
-        /* Add to cart button */
-        .add-to-cart {
-            width: 100%;
-            padding: 0.75rem;
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .add-to-cart:hover {
-            background: linear-gradient(135deg, #218838, #1ea085);
-            transform: translateY(-2px);
-        }
-
-        /* Banner section */
-        .banner {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 3rem 0;
-            text-align: center;
-            margin-top: 2rem;
-        }
-
-        .banner h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-
-        .banner p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-
-        .cta-button {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: white;
-            color: #ff6b6b;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-
-        .cta-button:hover {
-            background: #f8f9fa;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Footer */
-        .footer {
-            background: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 2rem 0;
-        }
-
-        /* Responsive design for mobile */
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .banner h2 {
-                font-size: 2rem;
-            }
-
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+      /* 접근성: 키보드 포커스가 갔을 때 테두리 강조 */
+      li.todo-item:focus-visible {
+        outline: 3px solid rgba(37, 99, 235, 0.5);
+        outline-offset: 2px;
+      }
     </style>
-</head>
-<body>
-    <!-- Header Section -->
-    <header class="header">
-        <div class="container">
-            <h1>TechStore</h1>
-            <p>Premium Electronics for Modern Life</p>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Mini To-Do List</h1>
+        <p class="subtitle">배열과 DOM 렌더링으로 관리하는 간단한 할 일 앱</p>
+      </header>
+
+      <section class="card" aria-label="할 일 추가">
+        <div class="row">
+          <!--
+            사용자가 할 일을 입력하는 텍스트 박스입니다.
+            id를 통해 스크립트에서 손쉽게 요소를 찾을 수 있습니다.
+          -->
+          <input
+            id="todo-input"
+            type="text"
+            placeholder="할 일을 입력하고 Enter 또는 '추가'를 눌러보세요"
+            autocomplete="off"
+            aria-label="할 일 입력"
+          />
+          <!-- 새 할 일을 배열에 추가하는 버튼 -->
+          <button class="add-btn" id="add-btn" aria-label="할 일 추가 버튼">추가</button>
         </div>
-    </header>
+        <p class="helper">항목을 클릭하면 완료/미완료가 전환되며 줄이 그어집니다.</p>
+      </section>
 
-    <!-- Products Section -->
-    <section class="products-section">
-        <div class="container">
-            <h2 class="section-title">Featured Products</h2>
-            
-            <!-- Products Grid -->
-            <div class="products-grid">
-                
-                <!-- Laptop Product Card -->
-                <div class="product-card">
-                    <!-- Product image placeholder -->
-                    <div class="product-image">💻</div>
-                    
-                    <h3 class="product-title">MacBook Pro 16"</h3>
-                    <div class="product-price">$2,399</div>
-                    
-                    <!-- Star rating -->
-                    <div class="rating">
-                        <span class="stars">★★★★★</span>
-                        <span class="rating-text">(4.8) 234 reviews</span>
-                    </div>
-                    
-                    <!-- Product options -->
-                    <div class="product-options">
-                        <!-- Specs dropdown -->
-                        <div class="option-group">
-                            <label class="option-label">Processor:</label>
-                            <select class="dropdown" onchange="updatePrice(this, 'laptop')">
-                                <option value="2399">M3 Pro (12-core CPU)</option>
-                                <option value="2899">M3 Max (14-core CPU)</option>
-                                <option value="3499">M3 Max (16-core CPU)</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Memory buttons -->
-                        <div class="option-group">
-                            <label class="option-label">Memory:</label>
-                            <div class="button-group">
-                                <button class="option-btn active" onclick="selectOption(this, 0)">16GB</button>
-                                <button class="option-btn" onclick="selectOption(this, 200)">32GB (+$200)</button>
-                                <button class="option-btn" onclick="selectOption(this, 600)">64GB (+$600)</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Color selector -->
-                        <div class="option-group">
-                            <label class="option-label">Color:</label>
-                            <div class="color-options">
-                                <div class="color-option active" style="background: #8e8e93" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #1d1d1f" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #e8e8ed" onclick="selectColor(this)"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Add to cart button -->
-                    <button class="add-to-cart" onclick="addToCart('MacBook Pro 16')">
-                        Add to Cart
-                    </button>
-                </div>
-
-                <!-- Phone Product Card -->
-                <div class="product-card">
-                    <div class="product-image">📱</div>
-                    
-                    <h3 class="product-title">iPhone 15 Pro</h3>
-                    <div class="product-price">$999</div>
-                    
-                    <div class="rating">
-                        <span class="stars">★★★★☆</span>
-                        <span class="rating-text">(4.6) 1,847 reviews</span>
-                    </div>
-                    
-                    <div class="product-options">
-                        <!-- Storage buttons -->
-                        <div class="option-group">
-                            <label class="option-label">Storage:</label>
-                            <div class="button-group">
-                                <button class="option-btn active" onclick="selectOption(this, 0)">128GB</button>
-                                <button class="option-btn" onclick="selectOption(this, 100)">256GB (+$100)</button>
-                                <button class="option-btn" onclick="selectOption(this, 300)">512GB (+$300)</button>
-                                <button class="option-btn" onclick="selectOption(this, 500)">1TB (+$500)</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Color selector -->
-                        <div class="option-group">
-                            <label class="option-label">Color:</label>
-                            <div class="color-options">
-                                <div class="color-option active" style="background: #1d1d1f" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #f5f5dc" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #4169e1" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #faf0e6" onclick="selectColor(this)"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button class="add-to-cart" onclick="addToCart('iPhone 15 Pro')">
-                        Add to Cart
-                    </button>
-                </div>
-
-                <!-- Earbuds Product Card -->
-                <div class="product-card">
-                    <div class="product-image">🎧</div>
-                    
-                    <h3 class="product-title">AirPods Pro (2nd Gen)</h3>
-                    <div class="product-price">$249</div>
-                    
-                    <div class="rating">
-                        <span class="stars">★★★★★</span>
-                        <span class="rating-text">(4.9) 3,421 reviews</span>
-                    </div>
-                    
-                    <div class="product-options">
-                        <!-- Features dropdown -->
-                        <div class="option-group">
-                            <label class="option-label">Features:</label>
-                            <select class="dropdown">
-                                <option>Active Noise Cancellation</option>
-                                <option>Transparency Mode</option>
-                                <option>Spatial Audio</option>
-                                <option>All Features</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Case type buttons -->
-                        <div class="option-group">
-                            <label class="option-label">Charging Case:</label>
-                            <div class="button-group">
-                                <button class="option-btn active" onclick="selectOption(this, 0)">Lightning</button>
-                                <button class="option-btn" onclick="selectOption(this, 50)">MagSafe (+$50)</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button class="add-to-cart" onclick="addToCart('AirPods Pro')">
-                        Add to Cart
-                    </button>
-                </div>
-
-                <!-- Speaker Product Card -->
-                <div class="product-card">
-                    <div class="product-image">🔊</div>
-                    
-                    <h3 class="product-title">HomePod mini</h3>
-                    <div class="product-price">$99</div>
-                    
-                    <div class="rating">
-                        <span class="stars">★★★★☆</span>
-                        <span class="rating-text">(4.4) 892 reviews</span>
-                    </div>
-                    
-                    <div class="product-options">
-                        <!-- Smart features dropdown -->
-                        <div class="option-group">
-                            <label class="option-label">Smart Features:</label>
-                            <select class="dropdown">
-                                <option>Siri Voice Control</option>
-                                <option>HomeKit Integration</option>
-                                <option>Multi-room Audio</option>
-                                <option>All Smart Features</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Color selector -->
-                        <div class="option-group">
-                            <label class="option-label">Color:</label>
-                            <div class="color-options">
-                                <div class="color-option active" style="background: #f5f5f7" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #1d1d1f" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #ff6b35" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #4169e1" onclick="selectColor(this)"></div>
-                                <div class="color-option" style="background: #ffd700" onclick="selectColor(this)"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button class="add-to-cart" onclick="addToCart('HomePod mini')">
-                        Add to Cart
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- Motivational Banner -->
-    <section class="banner">
-        <div class="container">
-            <h2>Upgrade Your Tech Game Today!</h2>
-            <p>Join thousands of satisfied customers who've transformed their digital lifestyle with our premium products.</p>
-            <a href="#" class="cta-button" onclick="showSpecialOffer()">Get 15% Off Your First Order</a>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 TechStore. All rights reserved. | Free shipping on orders over $50</p>
-        </div>
-    </footer>
+      <!-- 할 일 목록이 렌더링될 자리입니다. -->
+      <ul id="todo-list" class="todo-list" aria-label="할 일 목록"></ul>
+    </div>
 
     <script>
-        // JavaScript functions for interactivity
+      // =============================================
+      // 데이터: 배열(Array)로 할 일 목록을 관리합니다.
+      // =============================================
+      // 각 항목은 { id: number, text: string, completed: boolean } 형태의 객체입니다.
+      // - id: 각 항목을 구별하기 위한 고유 번호 (렌더링/토글에 사용)
+      // - text: 사용자가 입력한 할 일 내용
+      // - completed: 완료 여부(true/false)
+      const todos = []; // 시작은 빈 배열로 두고, 사용자가 추가합니다.
 
-        // Function to handle option button selection (memory, storage, etc.)
-        function selectOption(button, priceChange) {
-            // Remove active class from all buttons in the same group
-            const buttons = button.parentElement.querySelectorAll('.option-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            
-            // Add active class to clicked button
-            button.classList.add('active');
-            
-            // Update price if there's a price change
-            if (priceChange !== undefined) {
-                updateProductPrice(button, priceChange);
-            }
-            
-            // Visual feedback
-            button.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                button.style.transform = 'scale(1)';
-            }, 150);
+      // 유틸: 고유 id 생성을 위한 간단한 증가 숫자. (실전에서는 uuid 등 사용 가능)
+      let nextId = 1;
+
+      // =============================================
+      // DOM 요소 참조(캐싱)
+      // =============================================
+      const inputEl = document.getElementById("todo-input");
+      const addBtnEl = document.getElementById("add-btn");
+      const listEl = document.getElementById("todo-list");
+
+      // =============================================
+      // 화면 렌더링 함수: 배열 -> DOM
+      // =============================================
+      // 배열에 들어있는 할 일들을 기준으로 <li> 목록을 새로 그립니다.
+      // render를 호출할 때마다 화면의 리스트는 배열 상태와 동일해집니다.
+      function renderList() {
+        // 1) 기존 리스트를 비웁니다. (간단한 전체 재렌더 방식)
+        listEl.innerHTML = "";
+
+        // 2) todos 배열을 순회하며, 각 항목에 대한 <li>를 만들어 붙입니다.
+        for (const item of todos) {
+          const li = document.createElement("li");
+          li.className = "todo-item" + (item.completed ? " completed" : "");
+          li.setAttribute("tabindex", "0"); // 키보드 포커스 가능
+          li.dataset.id = String(item.id);    // 이벤트에서 id를 찾기 위한 data 속성
+
+          const dot = document.createElement("span");
+          dot.className = "dot";
+
+          const text = document.createElement("span");
+          text.className = "text";
+          text.textContent = item.text;
+
+          li.appendChild(dot);
+          li.appendChild(text);
+          listEl.appendChild(li);
+        }
+      }
+
+      // =============================================
+      // 항목 추가 로직
+      // =============================================
+      function addTodoFromInput() {
+        // 1) 입력값을 읽고, 양쪽 공백을 제거합니다.
+        const raw = inputEl.value.trim();
+
+        // 2) 빈 문자열은 추가하지 않습니다.
+        if (raw.length === 0) {
+          // 초보자 친화적 UX: 잠깐 버튼 흔들기 등 시각 피드백을 줘도 좋지만, 여기선 단순 경고만.
+          inputEl.focus();
+          return;
         }
 
-        // Function to handle color selection
-        function selectColor(colorDiv) {
-            // Remove active class from all colors in the same group
-            const colors = colorDiv.parentElement.querySelectorAll('.color-option');
-            colors.forEach(color => color.classList.remove('active'));
-            
-            // Add active class to selected color
-            colorDiv.classList.add('active');
-            
-            // Visual feedback
-            colorDiv.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                colorDiv.style.transform = 'scale(1.1)';
-            }, 150);
-        }
+        // 3) 새 항목 객체를 만들어 배열의 끝에 추가합니다. (push)
+        const newItem = { id: nextId++, text: raw, completed: false };
+        todos.push(newItem);
 
-        // Function to update price based on dropdown selection
-        function updatePrice(dropdown, productType) {
-            const card = dropdown.closest('.product-card');
-            const priceElement = card.querySelector('.product-price');
-            const newPrice = dropdown.value;
-            
-            // Animate price change
-            priceElement.style.transform = 'scale(1.1)';
-            priceElement.style.color = '#28a745';
-            
-            setTimeout(() => {
-                priceElement.textContent = '$' + newPrice;
-                priceElement.style.transform = 'scale(1)';
-                priceElement.style.color = '#e74c3c';
-            }, 200);
-        }
+        // 4) 입력창은 비워주고 포커스를 유지합니다. (연속 입력 편의)
+        inputEl.value = "";
+        inputEl.focus();
 
-        // Function to update product price for option buttons
-        function updateProductPrice(button, priceChange) {
-            const card = button.closest('.product-card');
-            const priceElement = card.querySelector('.product-price');
-            const currentPrice = parseInt(priceElement.textContent.replace('$', '').replace(',', ''));
-            
-            // Calculate base price (this is simplified - in real app you'd store base prices)
-            let basePrice;
-            if (card.querySelector('.product-title').textContent.includes('MacBook')) {
-                basePrice = 2399;
-            } else if (card.querySelector('.product-title').textContent.includes('iPhone')) {
-                basePrice = 999;
-            } else if (card.querySelector('.product-title').textContent.includes('AirPods')) {
-                basePrice = 249;
-            } else {
-                basePrice = 99;
-            }
-            
-            const newPrice = basePrice + priceChange;
-            
-            // Animate price change
-            priceElement.style.transform = 'scale(1.1)';
-            priceElement.style.color = '#28a745';
-            
-            setTimeout(() => {
-                priceElement.textContent = '$' + newPrice.toLocaleString();
-                priceElement.style.transform = 'scale(1)';
-                priceElement.style.color = '#e74c3c';
-            }, 200);
-        }
+        // 5) 배열 변경 후, 화면을 업데이트합니다.
+        renderList();
+      }
 
-        // Function to handle add to cart
-        function addToCart(productName) {
-            // Create a simple notification
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #28a745;
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                z-index: 1000;
-                font-weight: 600;
-                transform: translateX(100%);
-                transition: transform 0.3s ease;
-            `;
-            notification.textContent = `${productName} added to cart! 🛒`;
-            
-            document.body.appendChild(notification);
-            
-            // Animate in
-            setTimeout(() => {
-                notification.style.transform = 'translateX(0)';
-            }, 100);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-            
-            // Button animation
-            event.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                event.target.style.transform = 'scale(1)';
-            }, 150);
-        }
+      // =============================================
+      // 항목 완료 토글 로직 (이벤트 위임)
+      // =============================================
+      // 리스트 전체에 한 번만 클릭/키보드 이벤트를 걸고, 실제 클릭된 <li>를 찾아 처리합니다.
+      listEl.addEventListener("click", function (event) {
+        // 클릭된 구체적인 요소(event.target)에서 가장 가까운 li.todo-item 조상을 찾습니다.
+        const li = event.target.closest("li.todo-item");
+        if (!li) return; // 빈 공간을 클릭한 경우 등은 무시
 
-        // Function for CTA button
-        function showSpecialOffer() {
-            alert('🎉 Congratulations! Use code TECH15 at checkout for 15% off your first order!\n\nValid for new customers only. Minimum order $100.');
-        }
+        const id = Number(li.dataset.id);
+        toggleTodoCompletedById(id);
+      });
 
-        // Add some interactive hover effects with JavaScript
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add subtle animations to product cards
-            const cards = document.querySelectorAll('.product-card');
-            cards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.borderColor = '#667eea';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.style.borderColor = '#e9ecef';
-                });
-            });
-            
-            // Add click effect to all buttons
-            const buttons = document.querySelectorAll('button, .cta-button');
-            buttons.forEach(button => {
-                button.addEventListener('click', function() {
-                    this.style.transform = 'scale(0.98)';
-                    setTimeout(() => {
-                        this.style.transform = '';
-                    }, 100);
-                });
-            });
-        });
+      // 키보드 접근성: Enter/Space로도 토글 가능하게 합니다.
+      listEl.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const li = event.target.closest("li.todo-item");
+        if (!li) return;
+        event.preventDefault();
+        const id = Number(li.dataset.id);
+        toggleTodoCompletedById(id);
+      });
+
+      function toggleTodoCompletedById(id) {
+        // 배열에서 해당 id를 가진 항목을 찾아 completed를 반대로 바꿉니다.
+        const target = todos.find(function (t) { return t.id === id; });
+        if (!target) return; // 안전 처리
+        target.completed = !target.completed;
+        renderList(); // 상태 변경 후 다시 렌더링
+      }
+
+      // =============================================
+      // 이벤트: 버튼 클릭 + Enter 키로 추가
+      // =============================================
+      addBtnEl.addEventListener("click", addTodoFromInput);
+
+      // 입력창에서 Enter를 누르면 추가되도록 처리
+      inputEl.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          addTodoFromInput();
+        }
+      });
+
+      // 초기 렌더(처음엔 빈 배열이므로 화면에도 비어 있는 목록이 보입니다)
+      renderList();
     </script>
-</body>
-</html>
+  </body>
+  </html>
+
+
