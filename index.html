@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini To-Do List</title>
+    <!--
+      이 파일 하나(index.html)만으로 동작하는 미니 투두 리스트 예제입니다.
+      - HTML: 화면에 보이는 구조를 담당합니다.
+      - CSS: 화면의 스타일(색, 크기, 간격 등)을 담당합니다.
+      - JavaScript: 동작(클릭, 입력, 배열 관리 등)을 담당합니다.
+
+      핵심 학습 포인트
+      1) 배열(Array)로 데이터(할 일 목록)를 관리합니다.
+      2) 배열 내용을 화면의 리스트(DOM)와 동기화(render)하는 방법을 익힙니다.
+      3) 항목 클릭 시 완료/미완료를 토글하여 스타일(줄 긋기)이 바뀌게 합니다.
+    -->
+    <style>
+      /* 전체 화면 기본 스타일 설정 */
+      :root {
+        --bg: #0f172a;          /* 배경색 (짙은 남색) */
+        --panel: #111827;       /* 카드/패널 배경 */
+        --text: #e5e7eb;        /* 기본 글자색 */
+        --muted: #9ca3af;       /* 보조 글자색 */
+        --accent: #22c55e;      /* 포인트 색 (초록) */
+        --danger: #ef4444;      /* 에러/경고 색 (빨강) */
+        --border: #1f2937;      /* 경계선 색 */
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+          "Apple Color Emoji", "Segoe UI Emoji";
+        height: 100%;
+      }
+
+      .container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 32px 16px 56px;
+      }
+
+      header {
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        font-size: 28px;
+        margin: 0 0 8px 0;
+      }
+
+      p.subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .card {
+        background: linear-gradient(180deg, #0b1220, #0b1220) padding-box,
+          linear-gradient(180deg, #1f2937, #0b1220) border-box;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+
+      input[type="text"] {
+        flex: 1 1 auto;
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      input[type="text"]::placeholder {
+        color: var(--muted);
+      }
+
+      input[type="text"]:focus {
+        border-color: #2563eb; /* 파란 포커스 */
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+      }
+
+      button.add-btn {
+        flex: 0 0 auto;
+        background: var(--accent);
+        color: #0a0f1f;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.05s ease, filter 0.15s ease;
+      }
+
+      button.add-btn:hover {
+        filter: brightness(1.05);
+      }
+
+      button.add-btn:active {
+        transform: translateY(1px);
+      }
+
+      .helper {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      ul.todo-list {
+        list-style: none;
+        margin: 16px 0 0 0;
+        padding: 0;
+      }
+
+      li.todo-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        user-select: none; /* 텍스트 드래그 방지로 클릭 실수 줄이기 */
+        cursor: pointer;    /* 클릭 가능한 항목임을 시각적으로 표기 */
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+
+      li.todo-item:hover {
+        background: #0f1a2e;
+        border-color: #2a3a55;
+      }
+
+      li.todo-item .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #475569; /* 기본 점 색 */
+        flex: 0 0 auto;
+        transition: background 0.15s ease;
+      }
+
+      li.todo-item.completed .dot {
+        background: var(--accent);
+      }
+
+      li.todo-item .text {
+        flex: 1;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+
+      /* 완료된 항목은 줄 긋기와 흐린 색상 적용 */
+      li.todo-item.completed .text {
+        text-decoration: line-through;
+        color: #94a3b8;
+      }
+
+      /* 접근성: 키보드 포커스가 갔을 때 테두리 강조 */
+      li.todo-item:focus-visible {
+        outline: 3px solid rgba(37, 99, 235, 0.5);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Mini To-Do List</h1>
+        <p class="subtitle">배열과 DOM 렌더링으로 관리하는 간단한 할 일 앱</p>
+      </header>
+
+      <section class="card" aria-label="할 일 추가">
+        <div class="row">
+          <!--
+            사용자가 할 일을 입력하는 텍스트 박스입니다.
+            id를 통해 스크립트에서 손쉽게 요소를 찾을 수 있습니다.
+          -->
+          <input
+            id="todo-input"
+            type="text"
+            placeholder="할 일을 입력하고 Enter 또는 '추가'를 눌러보세요"
+            autocomplete="off"
+            aria-label="할 일 입력"
+          />
+          <!-- 새 할 일을 배열에 추가하는 버튼 -->
+          <button class="add-btn" id="add-btn" aria-label="할 일 추가 버튼">추가</button>
+        </div>
+        <p class="helper">항목을 클릭하면 완료/미완료가 전환되며 줄이 그어집니다.</p>
+      </section>
+
+      <!-- 할 일 목록이 렌더링될 자리입니다. -->
+      <ul id="todo-list" class="todo-list" aria-label="할 일 목록"></ul>
+    </div>
+
+    <script>
+      // =============================================
+      // 데이터: 배열(Array)로 할 일 목록을 관리합니다.
+      // =============================================
+      // 각 항목은 { id: number, text: string, completed: boolean } 형태의 객체입니다.
+      // - id: 각 항목을 구별하기 위한 고유 번호 (렌더링/토글에 사용)
+      // - text: 사용자가 입력한 할 일 내용
+      // - completed: 완료 여부(true/false)
+      const todos = []; // 시작은 빈 배열로 두고, 사용자가 추가합니다.
+
+      // 유틸: 고유 id 생성을 위한 간단한 증가 숫자. (실전에서는 uuid 등 사용 가능)
+      let nextId = 1;
+
+      // =============================================
+      // DOM 요소 참조(캐싱)
+      // =============================================
+      const inputEl = document.getElementById("todo-input");
+      const addBtnEl = document.getElementById("add-btn");
+      const listEl = document.getElementById("todo-list");
+
+      // =============================================
+      // 화면 렌더링 함수: 배열 -> DOM
+      // =============================================
+      // 배열에 들어있는 할 일들을 기준으로 <li> 목록을 새로 그립니다.
+      // render를 호출할 때마다 화면의 리스트는 배열 상태와 동일해집니다.
+      function renderList() {
+        // 1) 기존 리스트를 비웁니다. (간단한 전체 재렌더 방식)
+        listEl.innerHTML = "";
+
+        // 2) todos 배열을 순회하며, 각 항목에 대한 <li>를 만들어 붙입니다.
+        for (const item of todos) {
+          const li = document.createElement("li");
+          li.className = "todo-item" + (item.completed ? " completed" : "");
+          li.setAttribute("tabindex", "0"); // 키보드 포커스 가능
+          li.dataset.id = String(item.id);    // 이벤트에서 id를 찾기 위한 data 속성
+
+          const dot = document.createElement("span");
+          dot.className = "dot";
+
+          const text = document.createElement("span");
+          text.className = "text";
+          text.textContent = item.text;
+
+          li.appendChild(dot);
+          li.appendChild(text);
+          listEl.appendChild(li);
+        }
+      }
+
+      // =============================================
+      // 항목 추가 로직
+      // =============================================
+      function addTodoFromInput() {
+        // 1) 입력값을 읽고, 양쪽 공백을 제거합니다.
+        const raw = inputEl.value.trim();
+
+        // 2) 빈 문자열은 추가하지 않습니다.
+        if (raw.length === 0) {
+          // 초보자 친화적 UX: 잠깐 버튼 흔들기 등 시각 피드백을 줘도 좋지만, 여기선 단순 경고만.
+          inputEl.focus();
+          return;
+        }
+
+        // 3) 새 항목 객체를 만들어 배열의 끝에 추가합니다. (push)
+        const newItem = { id: nextId++, text: raw, completed: false };
+        todos.push(newItem);
+
+        // 4) 입력창은 비워주고 포커스를 유지합니다. (연속 입력 편의)
+        inputEl.value = "";
+        inputEl.focus();
+
+        // 5) 배열 변경 후, 화면을 업데이트합니다.
+        renderList();
+      }
+
+      // =============================================
+      // 항목 완료 토글 로직 (이벤트 위임)
+      // =============================================
+      // 리스트 전체에 한 번만 클릭/키보드 이벤트를 걸고, 실제 클릭된 <li>를 찾아 처리합니다.
+      listEl.addEventListener("click", function (event) {
+        // 클릭된 구체적인 요소(event.target)에서 가장 가까운 li.todo-item 조상을 찾습니다.
+        const li = event.target.closest("li.todo-item");
+        if (!li) return; // 빈 공간을 클릭한 경우 등은 무시
+
+        const id = Number(li.dataset.id);
+        toggleTodoCompletedById(id);
+      });
+
+      // 키보드 접근성: Enter/Space로도 토글 가능하게 합니다.
+      listEl.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const li = event.target.closest("li.todo-item");
+        if (!li) return;
+        event.preventDefault();
+        const id = Number(li.dataset.id);
+        toggleTodoCompletedById(id);
+      });
+
+      function toggleTodoCompletedById(id) {
+        // 배열에서 해당 id를 가진 항목을 찾아 completed를 반대로 바꿉니다.
+        const target = todos.find(function (t) { return t.id === id; });
+        if (!target) return; // 안전 처리
+        target.completed = !target.completed;
+        renderList(); // 상태 변경 후 다시 렌더링
+      }
+
+      // =============================================
+      // 이벤트: 버튼 클릭 + Enter 키로 추가
+      // =============================================
+      addBtnEl.addEventListener("click", addTodoFromInput);
+
+      // 입력창에서 Enter를 누르면 추가되도록 처리
+      inputEl.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          addTodoFromInput();
+        }
+      });
+
+      // 초기 렌더(처음엔 빈 배열이므로 화면에도 비어 있는 목록이 보입니다)
+      renderList();
+    </script>
+  </body>
+  </html>
+
+
